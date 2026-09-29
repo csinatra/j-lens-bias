@@ -277,10 +277,10 @@ category-level BBQ claim.
 * [Week 2](../Week%202/submissions/csinatra_week_2.ipynb): J-lens readout on BBQ
 * [Week 3](../Week%203/submissions/csinatra_week_3/csinatra_week_3.ipynb): template lens,
   matched quads, and the group-prior/bias split
-* [Week 4](https://github.com/csinatra/j-lens-bias/blob/e6e115770efa6383d6e0bc75fa46eedf31d9b595/Week%204/submissions/csinatra_week_4/csinatra_week_4.ipynb):
+* [Week 4](../Week%204/submissions/csinatra_week_4/csinatra_week_4.ipynb):
   swaps, controls, and counterfactual patching
 
 [week 1]: ../Week%201/submissions/csinatra_week_1.ipynb
 [week 2]: ../Week%202/submissions/csinatra_week_2.ipynb
 [week 3]: ../Week%203/submissions/csinatra_week_3/csinatra_week_3.ipynb
-[week 4]: https://github.com/csinatra/j-lens-bias/blob/e6e115770efa6383d6e0bc75fa46eedf31d9b595/Week%204/submissions/csinatra_week_4/csinatra_week_4.ipynb
+[week 4]: ../Week%204/submissions/csinatra_week_4/csinatra_week_4.ipynb
