@@ -87,8 +87,8 @@ information from the evidence sentence to the answer position leans on the long-
 mixing only full attention gives it, but this is suggestive, not tested.** The layer
 numbers are tied to this model's attention schedule rather than a universal depth marker,
 and confirming the link needs a second architecture. A second result in RQ4 is loosely
-consistent: in the single-layer swap sweep, removing the stereotyped answer's J-lens
-direction succeeds on at most 35% of prompts through layer 22, about the same as the swap
+consistent: in the single-layer swap sweep, on prompts where the model gives the
+stereotyped answer, removing that answer's J-lens direction succeeds on at most 35% of prompts through layer 22, about the same as the swap
 itself, then jumps to 62% at layer 23, another full-attention layer, and peaks at 77% at
 layer 27 ([week 4], section 7). The two methods change at different layers, so they don't
 localize the same step, but in both some of the sharpest changes fall on full-attention
@@ -141,7 +141,7 @@ a clean run instead, and is what fixed the problem below.
 | Template swap | Whether the phrase-level group representation drives the answer |
 | J-lens swap | Whether the single-token group representation drives the answer |
 | Random word / token | Whether adding any unrelated content produces the effect, or it depends on which group is added |
-| Gaussian direction | An approximate, leaky ablation: mostly removes the stereotyped answer's component without adding anything specific in its place |
+| Gaussian, two variants | An approximate, leaky ablation: removes one answer's direction, the stereotyped answer's or the other's, without adding anything specific in its place |
 | Nonce / unrelated group | Whether any real-seeming content is enough, or it needs the specific paired group |
 | Patch @L | The causal reference: what a real evidence-driven change looks like |
 
@@ -158,48 +158,33 @@ against 71% for direct patching, without degrading the text ([week 4], sections 
 3).**
 
 The controls split the effect into two directions, both on ambiguous prompts, moving an
-answer onto the stereotyped group versus off it. Every intervention succeeds more often
-in the off direction than the onto direction, but the size of that gap is very different
-between the real swaps and the controls:
+answer onto the stereotyped group versus off it ([week 4], section 3):
 
-| Intervention | Off the stereotyped answer | Onto the stereotyped answer | Gap |
-| :---- | :---- | :---- | :---- |
-| Patch @28, causal reference | 51/69 (74%) | 33/50 (66%) | 8 pts |
-| Template swap | 12/39 (31%) | 9/32 (28%) | 3 pts |
-| J-lens swap | 23/39 (59%) | 16/32 (50%) | 9 pts |
-| Template control, Gaussian | 18/39 (46%) | 0/32 (0%) | 46 pts |
-| Template control, random word | 15/39 (38%) | 2/32 (6%) | 32 pts |
-| J-lens control, Gaussian | 26/39 (67%) | 1/32 (3%) | 64 pts |
-| J-lens control, random token | 8/39 (21%) | 0/32 (0%) | 21 pts |
+| Intervention | Off the stereotyped answer | Onto the stereotyped answer |
+| :---- | :---- | :---- |
+| Patch @28, causal reference (all 119 prompts) | 51/69 (74%) | 33/50 (66%) |
+| Template swap | 12/39 (31%) | 9/32 (28%) |
+| J-lens swap | 23/39 (59%) | 16/32 (50%) |
+| Template, removing the stereotyped answer's direction | 18/39 (46%) | 0/32 (0%) |
+| Template, removing the other answer's direction | 1/39 (3%) | 16/32 (50%) |
+| J-lens, removing the stereotyped answer's direction | 26/39 (67%) | 1/32 (3%) |
+| J-lens, removing the other answer's direction | 1/39 (3%) | 19/32 (59%) |
+| Template control, random word | 15/39 (38%) | 2/32 (6%) |
+| J-lens control, random token | 8/39 (21%) | 0/32 (0%) |
 
-([week 4], section 3. The patch row counts all 119 prompts, the other rows the 71 where
-the clean model names a group.)
-
-The real swaps stay close to balanced across directions, 3 and 9 points, about the size
-of the patch's own asymmetry, 8 points. Every control shows a much larger gap, **and that
-gap is built into how the controls are designed.** A swap exchanges the prompt's
-coordinates on two vectors, the stereotyped answer's and the other answer's. Each control
-pairs the stereotyped answer's vector with a replacement for the other answer's: noise of
-the same size, a random word or token, a nonce word, or an unrelated group. The prompt has
-almost no coordinate on the Gaussian control's noise direction, so exchanging coordinates
-mostly sets the stereotyped answer's component to zero, an approximate removal of that
-direction. That can push an answer off the stereotyped group but has no way to push it
-onto it, because no control removes the other answer's direction. Removing the
-stereotyped direction alone flips 46% (template) and 67% (J-lens) of stereotyped answers,
-more than the swaps themselves. The item structure doesn't explain the gap. A two-answer
-item is symmetric, and the baseline split, 39 prompts defaulting to the stereotyped answer
-and 32 to the other, is too small to produce 46 to 64 point gaps.
-
-**Only the targeted swaps are able to move an answer onto the stereotyped group**, 9/32
-for the template lens and 16/32 for J-lens against 0/32 and 1/32 for their Gaussian
-controls, both significant after Holm correction. A preliminary reading is that removing a
-group's direction is enough to move an answer away from it, while moving an answer toward
-a group needs its direction added. There is a caveat worth keeping in view. The direction
-every control removes is always the stereotyped answer's, so this design can't tell
-whether removal's one-way effect is specific to stereotyped answers or applies to
-whichever answer's direction is removed. A control built on the answer the model
-currently gives, removing that answer's direction whether or not it's the stereotyped
-one, would separate the two.
+A swap exchanges the prompt's coordinates on two vectors, the stereotyped answer's and the
+other answer's. Each Gaussian control pairs one answer's vector with noise of the other's
+size. The prompt has almost no coordinate on the noise, so the edit mostly sets that
+answer's component to zero, an approximate removal of its direction. **Removing the
+direction of the answer the model currently gives flips about half the answers or more in
+both directions**, 46% and 67% off the stereotyped group (template, J-lens) and 50% and 59%
+onto it, at least as often as the swaps themselves. Removing the direction of the answer
+the model doesn't give almost never changes anything. Neither swap beats the removal of
+the given answer's direction in either direction (Holm p ≥ 0.16). So stereotyped answers
+are no easier to dislodge than the others, and most of what a swap does to the answer
+comes from removing the current answer's direction. Adding the other group's direction on
+top adds nothing measurable here. The remaining controls replace the other answer's
+vector and keep the stereotyped one, so they also mostly act off the stereotyped group.
 
 The J-lens swap clears its real-vector controls, random token 11%, unrelated group 17%,
 both Holm p < 0.001, but those controls also badly degrade the text. The template swap
