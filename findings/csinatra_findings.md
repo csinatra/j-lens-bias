@@ -172,27 +172,34 @@ between the real swaps and the controls:
 | J-lens control, Gaussian | 26/39 (67%) | 1/32 (3%) | 64 pts |
 | J-lens control, random token | 8/39 (21%) | 0/32 (0%) | 21 pts |
 
-([week 4], section 3; the patch row counts all 119 prompts, the other rows the 71 where
-the clean model names a group)
+([week 4], section 3. The patch row counts all 119 prompts, the other rows the 71 where
+the clean model names a group.)
 
 The real swaps stay close to balanced across directions, 3 and 9 points, about the size
 of the patch's own asymmetry, 8 points. Every control shows a much larger gap, **and that
-gap is built into how the controls are designed.** Each control keeps the stereotyped
-answer's vector and replaces only its partner. The Gaussian control's partner is a
-direction the prompt has almost no coordinate on, so the edit mostly removes the
-stereotyped answer's component: it can push an answer off the stereotyped group but has
-no way to push it onto it. Removing that direction alone flips 46% (template) and 67%
-(J-lens) of stereotyped answers, more than the swaps themselves. The item structure
-doesn't explain the gap: a two-answer item is symmetric, and the baseline split, 39
-prompts defaulting to the stereotyped answer and 32 to the other, is too small to produce
-46 to 64 point gaps. **Moving an answer onto the stereotyped group, only the targeted
-swaps manage it**, 9/32 for the template lens and 16/32 for J-lens against 0/32 and 1/32
-for their Gaussian controls, both significant after Holm correction. A preliminary
-reading is that removing a group's direction is enough to move an answer away from it,
-while moving an answer toward a group needs its direction added. Because every control
-keeps the stereotyped vector, "stereotyped" and "kept fixed" are confounded here; a
-control that keeps the named answer's vector instead would test whether removal works in
-both directions.
+gap is built into how the controls are designed.** A swap exchanges the prompt's
+coordinates on two vectors, the stereotyped answer's and the other answer's. Each control
+pairs the stereotyped answer's vector with a replacement for the other answer's: noise of
+the same size, a random word or token, a nonce word, or an unrelated group. The prompt has
+almost no coordinate on the Gaussian control's noise direction, so exchanging coordinates
+mostly sets the stereotyped answer's component to zero, an approximate removal of that
+direction. That can push an answer off the stereotyped group but has no way to push it
+onto it, because no control removes the other answer's direction. Removing the
+stereotyped direction alone flips 46% (template) and 67% (J-lens) of stereotyped answers,
+more than the swaps themselves. The item structure doesn't explain the gap. A two-answer
+item is symmetric, and the baseline split, 39 prompts defaulting to the stereotyped answer
+and 32 to the other, is too small to produce 46 to 64 point gaps.
+
+**Only the targeted swaps are able to move an answer onto the stereotyped group**, 9/32
+for the template lens and 16/32 for J-lens against 0/32 and 1/32 for their Gaussian
+controls, both significant after Holm correction. A preliminary reading is that removing a
+group's direction is enough to move an answer away from it, while moving an answer toward
+a group needs its direction added. There is a caveat worth keeping in view. The direction
+every control removes is always the stereotyped answer's, so this design can't tell
+whether removal's one-way effect is specific to stereotyped answers or applies to
+whichever answer's direction is removed. A control built on the answer the model
+currently gives, removing that answer's direction whether or not it's the stereotyped
+one, would separate the two.
 
 The J-lens swap clears its real-vector controls, random token 11%, unrelated group 17%,
 both Holm p < 0.001, but those controls also badly degrade the text. The template swap
