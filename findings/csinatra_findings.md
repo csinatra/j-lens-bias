@@ -1,4 +1,4 @@
-# csinatra: contributions and findings
+# Contributions and Findings
 
 **Status: preliminary.** These are exploratory findings from a four-week community
 project, at proof-of-concept scale: one model, one lens family, and 119 prompts for the
@@ -37,12 +37,13 @@ the free-response readout is mostly neutral, not strongly directional.**
 
 I also computed the correlation between each lens's delta at the read position and the
 free-response first-token margin, per category. J-lens correlates at 0.57 to 0.89 and
-stays consistent across categories. The template lens is weaker and much more uneven,
-from −0.02 (`Sexual_orientation`, essentially no relationship) up to 0.61 (`Religion`) and
-0.52 (`SES`) ([week 3], section 6.5). **`Gender_identity` is the one category where both
-lenses show weak correlation, template 0.21 and J-lens 0.57, its lowest value, which lines
-up with the multiple-choice result below and is worth flagging as a category where any
-single measurement in this project should be treated with extra caution.**
+stays consistent across categories. The template lens is weaker and much more uneven, from
+−0.02 (`Sexual_orientation`, essentially no relationship) up to 0.61 (`Religion`) and 0.52
+(`SES`) ([week 3], section 6.5). **`Gender_identity` has the weakest J-lens correlation,
+0.57, and a weak template one, 0.21 (`Sexual_orientation` is close behind at 0.61 and
+−0.02), which lines up with the multiple-choice result below and is worth flagging as a
+category where any single measurement in this project should be treated with extra
+caution.**
 
 **Validity gate.** On disambiguated items, the text names the target, sometimes the
 stereotype-congruent answer and sometimes not, independent of polarity. The gate checks
@@ -74,25 +75,23 @@ all of them comes from a general, non-BBQ calibration pass and is covered under
 Measurement pitfalls: the model's own output is word-like only about 58% of the time, so
 that's the meaningful ceiling, not 1.0 ([week 1], section 7).
 
-**Counterfactual patching gives the strongest evidence, and it isn't a lens reading.**
-Writing the disambiguated prompt's own residual into the ambiguous run at a given layer,
-then checking whether the model then says the evidence answer, rises from at most 10%
-through layers 0 to 14, climbs through layers 15 to 19 (20%, 23%, 41%, 46%, 61%),
-plateaus near 63%, then steps up again to 71% at layer 27 and 76% at layer 31 ([week 4],
-section 4). `Qwen3.5-4B` has full attention only every fourth layer (3, 7, …, 31) and
-linear attention elsewhere. The rise begins at a full-attention layer (15), and both later
-steps (27, 31) land on full-attention layers, though the largest single jump, 23% to 41%,
-is at layer 17, a linear-attention layer. **A preliminary reading is that moving
-information from the evidence sentence to the answer position leans on the long-range
-mixing only full attention gives it, but this is suggestive, not tested.** The layer
-numbers are tied to this model's attention schedule rather than a universal depth marker,
-and confirming the link needs a second architecture. A second result in RQ4 is loosely
-consistent: in the single-layer swap sweep, on prompts where the model gives the
-stereotyped answer, removing that answer's J-lens direction succeeds on at most 35% of prompts through layer 22, about the same as the swap
-itself, then jumps to 62% at layer 23, another full-attention layer, and peaks at 77% at
-layer 27 ([week 4], section 7). The two methods change at different layers, so they don't
-localize the same step, but in both some of the sharpest changes fall on full-attention
-layers.
+**Counterfactual patching gives the strongest evidence.** When the disambiguated prompt's
+own residual is written into the ambiguous run at a given layer, the share of prompts
+where the model then says the evidence answer rises from at most 10% through layers 0 to
+14, climbs through layers 15 to 19 (20%, 23%, 41%, 46%, 61%), plateaus near 63%, then
+steps up again to 71% at layer 27 and 76% at layer 31 ([week 4], section 4). `Qwen3.5-4B`
+has full attention only every fourth layer (3, 7, …, 31) and linear attention elsewhere.
+The rise begins at a full-attention layer (15), and both later steps (27, 31) land on
+full-attention layers, though the largest single jump, 23% to 41%, is at layer 17, a
+linear-attention layer. **A preliminary reading is that moving information from the
+evidence sentence to the answer position leans on the long-range mixing only full
+attention gives, but this is suggestive, not tested.** The layer numbers are tied to this
+model's attention schedule rather than a universal depth marker, and confirming the link
+would require testing on a second architecture. A second result in RQ4 is loosely
+consistent: ablating the J-lens direction of the model's current answer at a single layer
+only starts working at layer 23, another full-attention layer ([week 4], section 7). The
+two methods change at different layers, so they don't localize the same step, but in both
+instances some of the sharpest changes fall on full-attention layers.
 
 **Template lens, probe stability.** The template readout's sign stabilizes at a median
 layer of 23, later than the layer where patching decides half the prompts (19) ([week 4],
@@ -175,16 +174,29 @@ answer onto the stereotyped group versus off it ([week 4], section 3):
 A swap exchanges the prompt's coordinates on two vectors, the stereotyped answer's and the
 other answer's. Each Gaussian control pairs one answer's vector with noise of the other's
 size. The prompt has almost no coordinate on the noise, so the edit mostly sets that
-answer's component to zero, an approximate removal of its direction. **Removing the
-direction of the answer the model currently gives flips about half the answers or more in
-both directions**, 46% and 67% off the stereotyped group (template, J-lens) and 50% and 59%
-onto it, at least as often as the swaps themselves. Removing the direction of the answer
-the model doesn't give almost never changes anything. Neither swap beats the removal of
-the given answer's direction in either direction (Holm p ≥ 0.16). So stereotyped answers
-are no easier to dislodge than the others, and most of what a swap does to the answer
-comes from removing the current answer's direction. Adding the other group's direction on
-top adds nothing measurable here. The remaining controls replace the other answer's
-vector and keep the stereotyped one, so they also mostly act off the stereotyped group.
+answer's component to zero, a soft ablation of its direction. **The controls' one-sided
+pattern is a ranking effect of that soft ablation, not a stereotype effect.** Ablating the
+direction of the answer in the top position, the one the model currently gives, changes
+about half the answers or more, whether or not it's the stereotyped one: 46% and 67% off
+the stereotyped group (template, J-lens) and 50% and 59% onto it. The model falls back to
+the only other option. Ablating the other answer's direction removes an answer that isn't
+on top, silently, and almost never changes anything. What the ablation does show is that
+an answer's lens direction is a working handle on the committed answer, not just a
+readout. Neither swap beats the ablation of the given answer's direction in either
+direction (Holm p ≥ 0.16), so most of what a swap does to the answer comes from that
+ablation, and adding the other group's direction on top adds nothing measurable here.
+The remaining controls replace the other answer's vector and keep the stereotyped one, so
+they also mostly act off the stereotyped group.
+
+This only holds late in the network. At a single layer, on prompts where the model gives
+the stereotyped answer, ablating that answer's J-lens direction changes at most 35% of
+answers through layer 22, about the same as the swap, then 62% at layer 23 and up to 77%
+at layer 27 ([week 4], section 7). That matches when the answer settles elsewhere: the
+evidence reaches the answer position at layers 15 to 19, and the template readout's sign
+stabilizes around layer 23. Earlier, the answer can rank highly in the lens without being
+the token the model ends up producing. A weak early effect could also mean later layers
+rebuild the answer from context, and the J-lens reads early layers less faithfully, so
+the exact layer is preliminary.
 
 The J-lens swap clears its real-vector controls, random token 11%, unrelated group 17%,
 both Holm p < 0.001, but those controls also badly degrade the text. The template swap
@@ -205,9 +217,10 @@ rather than 1.0, the lens around layers 24 to 27 actually points at a word more 
 than the model's own output does ([week 1], section 7).
 
 **Single-token rank readouts structurally can't separate some pairs.** Numeric ages
-collapse to a shared leading token and read a rank gap of exactly zero. About 23% of items
-resolve only a subword prefix, and J-lens is undefined wherever the two answers share a
-first token ([week 2], sections 1.1 and 4.6, and [week 3], section 6.1).
+collapse to a shared leading token and read a rank gap of exactly zero. About 13% of items
+(93 of 729) have a role word that resolves only to a subword prefix, and J-lens is
+undefined wherever the two answers share a first token ([week 2], sections 1.1 and 4.6,
+and [week 3], section 6.1).
 
 **Group prior and bias are entangled, and this is a real confound.** Splitting the lens
 delta into a polarity-invariant "group prior," which group's term the readout favors
@@ -261,6 +274,10 @@ category-level BBQ claim.
   to the combination is invisible.
 * "Names the evidence group" is a difference-word match, so the RQ4 success rates are
   lower bounds.
+* The Gaussian control is a soft ablation that also adds noise. A clean ablation of the
+  answer's direction is implemented but not run.
+* The per-layer ablation only covers the stereotyped answer's direction, so it is matched
+  only on prompts where the model gives that answer.
 
 ## Notebooks
 
